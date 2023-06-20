@@ -74,9 +74,13 @@
  *                       the test + <dt>s rather than the current time; DT is a
  *                       floating-point number
  *
+ *               | flush ENTITY-NAME
+ *
+ *                       Invokes dds_write_flush on entity
+ *
  *               | READ-LIKE ENTITY-NAME
  *               | READ-LIKE(A,B) ENTITY-NAME
- *               | READ-LIKE{[S1[,S2[,S3...]][,...]} ENTITY-NAME
+ *               | READ-LIKE[!]{[S1[,S2[,S3...]][,...]} ENTITY-NAME
  *
  *                       Reads/takes at most 10 samples.  The second form counts the
  *                       number of valid and invalid samples seen and checks them against
@@ -87,6 +91,10 @@
  *
  *                         [STATE]K[ENTITY-NAME][@DT]
  *                         [STATE](K,X,Y)[ENTITY-NAME][@DT]
+ *
+ *                       Suffixing READ-LIKE with an exclamation mark in this third form
+ *                       makes it wait until all specified data has been received (with
+ *                       a maximum of 5s).
  *
  *                       The first form is an invalid sample with only the (integer) key
  *                       value K, the second form also specifies the two (integer)
@@ -175,6 +183,8 @@
  *                         a   ignore ACKNACK messages
  *                         r   ignore retransmit requests
  *                         h   suppress periodic heartbeats
+ *                         s   suppress possible flush on synchronous (a.k.a. piggy-backed)
+ *                             heartbeat
  *                         d   drop outgoing data
  *
  *               | status LISTENER(ARGS) ENTITY-NAME
@@ -226,6 +236,7 @@
  *               | tp=N          transport-priority
  *               | ud=...        user data (with escape sequences and hex/octal
  *                               input allowed)
+ *               | wr={y|n}      writer batching
  *
  * All entities share the listeners with their global state. Only the latest invocation is visible.
  *
@@ -301,13 +312,13 @@ struct oneliner_ctx {
   char msg[256];
 
   jmp_buf jb;
-  
+
   int mprintf_needs_timestamp;
 
   ddsrt_mutex_t g_mutex;
   ddsrt_cond_t g_cond;
   struct oneliner_cb cb[3];
-  
+
   const char *config_override; // optional
 };
 
